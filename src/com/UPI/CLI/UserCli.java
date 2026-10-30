@@ -77,25 +77,72 @@ public class UserCli {
         }
     }
 
-    private void registerUser() {
+    
+private void registerUser() {
 
+    String name;
+    String phone;
+    String email;
+    String pin;
+
+    // Name validation
+    while (true) {
         System.out.print("Enter name: ");
-        String name = sc.nextLine();
+        name = sc.nextLine().trim();
 
-        System.out.print("Enter phone number: ");
-        String phone = sc.nextLine();
+        if (name.matches("[a-zA-Z ]+")) {
+            break;
+        }
 
-        System.out.print("Enter email: ");
-        String email = sc.nextLine();
-
-        System.out.print("Enter 4-digit PIN: ");
-        String pin = sc.nextLine();
-
-        User user = userService.registerUser(name, phone, email, pin);
-
-        System.out.println("User registered successfully!");
-        System.out.println("User ID: " + user.getUserId());
+        System.out.println("Invalid name! Enter letters only.");
     }
+
+    // Phone validation
+    while (true) {
+        System.out.print("Enter phone number: ");
+        phone = sc.nextLine().trim();
+
+        if (!phone.matches("[0-9]{10}")) {
+            System.out.println("Invalid phone number! Enter exactly 10 digits.");
+        } 
+        else if (userService.getUserByPhoneNumber(phone) != null) {
+            System.out.println("Phone number already registered! Enter another number.");
+        } 
+        else {
+            break;
+        }
+    }
+
+    // Email validation
+    while (true) {
+        System.out.print("Enter email: ");
+        email = sc.nextLine().trim();
+
+        if (email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+            break;
+        }
+
+        System.out.println("Invalid email! Enter a valid email address.");
+    }
+
+    // PIN validation
+    while (true) {
+        System.out.print("Enter 4-digit PIN: ");
+        pin = sc.nextLine().trim();
+
+        if (pin.matches("[0-9]{4}")) {
+            break;
+        }
+
+        System.out.println("Invalid PIN! Enter exactly 4 digits.");
+    }
+
+    User user = userService.registerUser(name, phone, email, pin);
+
+    System.out.println("\nUser registered successfully!");
+    System.out.println("User ID: " + user.getUserId());
+}
+
 
     private void viewUser() {
 
