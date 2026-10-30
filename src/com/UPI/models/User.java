@@ -10,6 +10,7 @@ public class User {
     private String phoneNumber;
     private String email;
     private String pin;
+    private double walletBalance = 0.0;
 
     private KycStatus kycStatus;
     private UserStatus userStatus;
@@ -69,4 +70,21 @@ public class User {
     public Double getMonthlyTransferLimit() {
         return kycStatus.getMonthlyTransferLimit();
     }
+    public double getWalletBalance() {
+    return walletBalance;
+}
+
+public void debit(double amount) {
+    if (amount > walletBalance) {
+        throw new IllegalArgumentException("Insufficient balance");
+    }
+    walletBalance -= amount;
+}
+
+public void credit(double amount) {
+    if (amount <= 0) {
+        throw new IllegalArgumentException("Invalid amount");
+    }
+    walletBalance += amount;
+}
 }
