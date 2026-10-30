@@ -6,11 +6,22 @@ import com.UPI.models.Wallet;
 import com.UPI.models.BankAccount;
 import com.UPI.models.Transaction;
 
+import com.UPI.repository.TransactionRepo;
+
 import java.math.BigDecimal;
 import java.util.*;
 public class WalletService {
 
+    private TransactionRepo transactionRepo;
     private List<Transaction> transactions = new ArrayList<>();
+
+    public WalletService() {
+        this(new TransactionRepo());
+    }
+
+    public WalletService(TransactionRepo transactionRepo) {
+        this.transactionRepo = transactionRepo;
+    }
 
     // Add Money
     public Transaction addMoney(User user, Wallet wallet,
@@ -68,10 +79,16 @@ public class WalletService {
         );
 
         transactions.add(t);
+        if (transactionRepo != null) {
+            transactionRepo.save(t);
+        }
         return t;
     }
 
     public List<Transaction> getTransactions() {
+        if (transactionRepo != null) {
+            return transactionRepo.getAll();
+        }
         return Collections.unmodifiableList(transactions);
     }
 }
