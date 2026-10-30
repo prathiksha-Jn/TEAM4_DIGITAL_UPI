@@ -1,152 +1,163 @@
 
 package com.UPI.CLI;
 
-import java.util.Scanner;
-
-import com.UPI.models.User;
-import com.UPI.models.KycStatus;
+import com.UPI.models.*;
+import com.UPI.repository.WalletRepo;
 import com.UPI.services.UserService;
+import com.UPI.services.WalletService;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
 
 public class UserCli {
 
     private Scanner sc;
     private UserService userService;
+    private WalletService walletService;
+    private WalletRepo walletRepo;
+
+    private Map<String, BankAccount> bankAccounts = new HashMap<>();
 
     public UserCli(Scanner sc, UserService userService) {
         this.sc = sc;
         this.userService = userService;
+        this.walletService = new WalletService();
+        this.walletRepo = new WalletRepo();
     }
 
     public void showMenu() {
 
         while (true) {
-
-            System.out.println("\n===== USER MANAGEMENT =====");
+            System.out.println("\n===== DIGITAL WALLET =====");
             System.out.println("1. Register User");
             System.out.println("2. View User");
             System.out.println("3. Update KYC");
             System.out.println("4. Block User");
             System.out.println("5. Unblock User");
             System.out.println("6. View All Users");
-            System.out.println("7. Exit");
+            System.out.println("7. Wallet Operations");
+            System.out.println("8. Exit");
 
-            System.out.print("Enter your choice: ");
-
+            System.out.print("Enter choice: ");
             int choice = sc.nextInt();
             sc.nextLine();
 
             try {
-
                 switch (choice) {
-
                     case 1:
                         registerUser();
                         break;
-
                     case 2:
                         viewUser();
                         break;
-
                     case 3:
                         updateKyc();
                         break;
-
                     case 4:
                         blockUser();
                         break;
-
                     case 5:
                         unblockUser();
                         break;
-
                     case 6:
                         userService.displayAllUsers();
                         break;
-
                     case 7:
-                        System.out.println("Exiting User Management...");
+                        walletOperations();
+                        break;
+                    case 8:
+                        System.out.println("Thank you!");
                         return;
-
                     default:
                         System.out.println("Invalid choice!");
                 }
-
             } catch (IllegalArgumentException e) {
                 System.out.println("Error: " + e.getMessage());
             }
         }
     }
 
-    
-private void registerUser() {
+    private void registerUser() {
 
-    String name;
-    String phone;
-    String email;
-    String pin;
-
-    // Name validation
-    while (true) {
         System.out.print("Enter name: ");
-        name = sc.nextLine().trim();
+        String name = sc.nextLine();
 
-        if (name.matches("[a-zA-Z ]+")) {
-            break;
-        }
+        System.out.print("Enter phone: ");
+        String phone = sc.nextLine();
 
-        System.out.println("Invalid name! Enter letters only.");
-    }
-
-    // Phone validation
-    while (true) {
-        System.out.print("Enter phone number: ");
-        phone = sc.nextLine().trim();
-
-        if (!phone.matches("[0-9]{10}")) {
-            System.out.println("Invalid phone number! Enter exactly 10 digits.");
-        } 
-        else if (userService.getUserByPhoneNumber(phone) != null) {
-            System.out.println("Phone number already registered! Enter another number.");
-        } 
-        else {
-            break;
-        }
-    }
-
-    // Email validation
-    while (true) {
         System.out.print("Enter email: ");
-        email = sc.nextLine().trim();
+        String email = sc.nextLine();
 
-        if (email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
-            break;
-        }
+        System.out.print("Enter PIN: ");
+        String pin = sc.nextLine();
 
-        System.out.println("Invalid email! Enter a valid email address.");
+        User user = userService.registerUser(
+            name, phone, email, pin
+        );
+
+        System.out.println("Registration successful!");
+        System.out.println("User ID: " + user.getUserId());
     }
-
-    // PIN validation
-    while (true) {
-        System.out.print("Enter 4-digit PIN: ");
-        pin = sc.nextLine().trim();
-
-        if (pin.matches("[0-9]{4}")) {
-            break;
-        }
-
-        System.out.println("Invalid PIN! Enter exactly 4 digits.");
-    }
-
-    User user = userService.registerUser(name, phone, email, pin);
-
-    System.out.println("\nUser registered successfully!");
-    System.out.println("User ID: " + user.getUserId());
-}
-
 
     private void viewUser() {
 
-        System.out.print("Enter phone number: ");
+        System.out.print("Enter phone: ");
+        User user = userService.getUserByPhoneNumber(sc.nextLine());
+
+        if (user == null) {
+            System.out.println("User not found!");
+            return;
+        }
+
+        System.out.println("Name: " + user.getName());
+        System.out.println("Phone: " + user.getPhoneNumber());
+        System.out.println("KYC: " + user.getKycStatus());
+        System.out.println("Status: " + user.getUserStatus());
+        System.out.println("Wallet Limit: " + user.getWalletLimit());
+    }
+
+    private void updateKyc() {
+
+        System.out.print("Enter phone: ");
+        String phone = sc.nextLine();
+
+        System.out.println("1. BASIC");
+        System.out.println("2. FULL");
+        int choice = sc.nextInt();
+        sc.nextLine();
+
+        KycStatus status;
+
+        if (choice == 1)
+            status = KycStatus.BASIC;
+        else if (choice == 2)
+            status = KycStatus.FULL;
+        else {
+            System.out.println("Invalid choice!");
+            return;
+        }
+
+        userService.updateKycStatus(phone, status);
+        System.out.println("KYC updated!");
+    }
+
+    private void blockUser() {
+        System.out.print("Enter phone: ");
+        userService.blockUser(sc.nextLine());
+        System.out.println("User blocked!");
+    }
+
+    private void unblockUser() {
+        System.out.print("Enter phone: ");
+        userService.unblockUser(sc.nextLine());
+        System.out.println("User unblocked!");
+    }
+
+    // MODULE 2 - WALLET OPERATIONS
+    private void walletOperations() {
+
+        System.out.print("Enter registered phone number: ");
         String phone = sc.nextLine();
 
         User user = userService.getUserByPhoneNumber(phone);
@@ -156,63 +167,100 @@ private void registerUser() {
             return;
         }
 
-        System.out.println("\n----- USER DETAILS -----");
-        System.out.println("User ID: " + user.getUserId());
-        System.out.println("Name: " + user.getName());
-        System.out.println("Phone: " + user.getPhoneNumber());
-        System.out.println("Email: " + user.getEmail());
-        System.out.println("KYC: " + user.getKycStatus());
-        System.out.println("Status: " + user.getUserStatus());
-        System.out.println("Wallet Limit: " + user.getWalletLimit());
-        System.out.println("Monthly Transfer Limit: " +
-                user.getMonthlyTransferLimit());
-    }
+        Wallet wallet = walletRepo.findByUserId(user.getUserId());
 
-    private void updateKyc() {
-
-        System.out.print("Enter phone number: ");
-        String phone = sc.nextLine();
-
-        System.out.println("1. BASIC");
-        System.out.println("2. FULL");
-        System.out.print("Select KYC: ");
-
-        int choice = sc.nextInt();
-        sc.nextLine();
-
-        KycStatus status;
-
-        if (choice == 1) {
-            status = KycStatus.BASIC;
-        } else if (choice == 2) {
-            status = KycStatus.FULL;
-        } else {
-            System.out.println("Invalid KYC choice!");
-            return;
+        if (wallet == null) {
+            wallet = new Wallet(
+                java.util.UUID.randomUUID().toString(),
+                user.getUserId()
+            );
+            walletRepo.save(wallet);
         }
 
-        userService.updateKycStatus(phone, status);
+        BankAccount bank = bankAccounts.get(user.getUserId());
 
-        System.out.println("KYC updated successfully!");
-    }
+        if (bank == null) {
+            System.out.print("Enter bank name: ");
+            String bankName = sc.nextLine();
 
-    private void blockUser() {
+            System.out.print("Enter account number: ");
+            String accountNumber = sc.nextLine();
 
-        System.out.print("Enter phone number: ");
-        String phone = sc.nextLine();
+            System.out.print("Enter initial bank balance: ");
+            BigDecimal balance = sc.nextBigDecimal();
+            sc.nextLine();
 
-        userService.blockUser(phone);
+            bank = new BankAccount(
+                java.util.UUID.randomUUID().toString(),
+                user.getUserId(),
+                accountNumber,
+                bankName,
+                balance,
+                true
+            );
 
-        System.out.println("User blocked successfully!");
-    }
+            bankAccounts.put(user.getUserId(), bank);
+        }
 
-    private void unblockUser() {
+        while (true) {
 
-        System.out.print("Enter phone number: ");
-        String phone = sc.nextLine();
+            System.out.println("\n===== WALLET OPERATIONS =====");
+            System.out.println("1. Add Money");
+            System.out.println("2. Withdraw Money");
+            System.out.println("3. Wallet Balance");
+            System.out.println("4. Bank Balance");
+            System.out.println("5. Transaction History");
+            System.out.println("6. Back");
 
-        userService.unblockUser(phone);
+            System.out.print("Enter choice: ");
+            int choice = sc.nextInt();
+            sc.nextLine();
 
-        System.out.println("User unblocked successfully!");
+            if (choice == 6)
+                return;
+
+            if (choice == 3) {
+                System.out.println("Wallet Balance: Rs."
+                    + wallet.getBalance());
+                continue;
+            }
+
+            if (choice == 4) {
+                System.out.println("Bank Balance: Rs."
+                    + bank.getBalance());
+                continue;
+            }
+
+            if (choice == 5) {
+                walletService.getTransactions().forEach(t ->
+                    System.out.println(
+                        t.getTransactionType() + " | Rs."
+                        + t.getAmount() + " | " + t.getStatus()
+                    )
+                );
+                continue;
+            }
+
+            if (choice != 1 && choice != 2) {
+                System.out.println("Invalid choice!");
+                continue;
+            }
+
+            System.out.print("Enter amount: ");
+            BigDecimal amount = sc.nextBigDecimal();
+            sc.nextLine();
+
+            try {
+                if (choice == 1) {
+                    walletService.addMoney(user, wallet, bank, amount);
+                    System.out.println("Money added successfully!");
+                } else {
+                    walletService.withdrawMoney(user, wallet, bank, amount);
+                    System.out.println("Money withdrawn successfully!");
+                }
+            } catch (IllegalArgumentException e) {
+                System.out.println("Transaction failed: " + e.getMessage());
+            }
+        }
     }
 }

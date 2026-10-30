@@ -1,11 +1,9 @@
-
 package com.UPI;
 
-import java.util.Scanner;
-
+import com.UPI.CLI.UserCli;
 import com.UPI.repository.UserRepo;
 import com.UPI.services.UserService;
-import com.UPI.CLI.UserCli;
+import java.util.Scanner;
 
 public class main {
 
@@ -14,10 +12,11 @@ public class main {
         Scanner sc = new Scanner(System.in);
 
         UserRepo userRepo = new UserRepo();
-
         UserService userService = new UserService(userRepo);
 
         UserCli userCli = new UserCli(sc, userService);
+
+        System.out.println("===== DIGITAL WALLET AND UPI =====");
 
         userCli.showMenu();
 
